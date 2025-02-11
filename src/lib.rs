@@ -2163,7 +2163,7 @@ impl Build {
 
         // Target flags
         match cmd.family {
-            ToolFamily::Clang { .. } => {
+            ToolFamily::Clang { zig_cc } => {
                 if !(cmd.has_internal_target_arg
                     || (target.os == "android"
                         && android_clang_compiler_uses_target_arg_internally(&cmd.path)))
@@ -2217,6 +2217,14 @@ impl Build {
                         Cow::Owned(
                             target.versioned_llvm_target(&self.apple_deployment_target(target)),
                         )
+                    } else if zig_cc {
+                        // https://github.com/ziglang/zig/issues/4911
+                        Cow::Owned(match target.llvm_target {
+                            "x86_64-unknown-linux-gnu" => "x86_64-linux-gnu".into(),
+                            "aarch64-unknown-linux-gnu" => "aarch64-linux-gnu".into(),
+                            "arm64-unknown-linux-gnu" => "arm64-linux-gnu".into(),
+                            _ => target.llvm_target.into(),
+                        })
                     } else {
                         Cow::Borrowed(target.llvm_target)
                     };
